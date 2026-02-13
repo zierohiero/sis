@@ -1,0 +1,109 @@
+/**
+ * app.css - Minimal styles for things Tailwind CDN can't handle
+ * Sistem Informasi Sekolah
+ */
+
+/* ==================== Custom Scrollbar ==================== */
+.sidebar-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+}
+
+/* ==================== Dropdown Animation ==================== */
+@keyframes dropdown-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-dropdown {
+    animation: dropdown-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==================== Modal Animation ==================== */
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-modal {
+    animation: modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==================== Loading Spinner ==================== */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.animate-spin-custom {
+    animation: spin 0.7s linear infinite;
+}
+
+/* ==================== Alert auto-fade ==================== */
+.alert-flash {
+    transition: opacity 300ms ease;
+}
+
+/* ==================== Sidebar Collapsed State (Desktop) ==================== */
+.sidebar-collapsed {
+    width: 72px !important;
+}
+.sidebar-collapsed .sidebar-text {
+    display: none !important;
+}
+.sidebar-collapsed nav ul li a {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+.sidebar-collapsed nav ul li a i {
+    font-size: 18px;
+    width: auto;
+}
+.sidebar-collapsed nav p {
+    display: none;
+}
+.sidebar-collapsed + .main-area,
+.sidebar-collapsed ~ #sidebarOverlay ~ .main-area {
+    margin-left: 72px !important;
+}
+
+/* ==================== Score Input (Grade Entry) ==================== */
+.score-input {
+    width: 5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.score-input:focus {
+    z-index: 1;
+}
+
+/* ==================== Print Styles ==================== */
+@media print {
+    .sidebar-base,
+    header.sticky,
+    .no-print,
+    .sidebar-overlay,
+    button,
+    .btn {
+        display: none !important;
+    }
+
+    .main-area {
+        margin-left: 0 !important;
+    }
+
+    main {
+        padding: 0 !important;
+    }
+
+    body {
+        background: white !important;
+        font-size: 12px;
+    }
+}

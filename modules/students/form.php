@@ -39,7 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'status' => sanitize($_POST['status'] ?? 'Aktif')
     ];
 
-    // Validation
     $errors = [];
 
     if (empty($data['name'])) {
@@ -50,14 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Jenis kelamin tidak valid';
     }
 
-    // Check duplicate NIS
     $stmt = $pdo->prepare("SELECT id FROM students WHERE nis = ? AND id != ?");
     $stmt->execute([$data['nis'], $id]);
     if ($stmt->fetch()) {
         $errors[] = 'NIS sudah terdaftar';
     }
 
-    // Check duplicate NISN
     if (!empty($data['nisn'])) {
         $stmt = $pdo->prepare("SELECT id FROM students WHERE nisn = ? AND id != ?");
         $stmt->execute([$data['nisn'], $id]);
@@ -66,12 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Handle photo upload
     $photoPath = $student['photo'] ?? null;
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
         $uploadResult = uploadFile($_FILES['photo'], STUDENT_PHOTO_PATH);
         if ($uploadResult['success']) {
-            // Delete old photo
             if ($photoPath) {
                 deleteFile($photoPath, STUDENT_PHOTO_PATH);
             }
@@ -83,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         if ($id) {
-            // Update
             $sql = "UPDATE students SET nis = ?, nisn = ?, name = ?, gender = ?, birth_place = ?,
                     birth_date = ?, father_name = ?, mother_name = ?, address = ?, phone = ?,
                     status = ?, photo = COALESCE(?, photo)
@@ -94,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data['phone'], $data['status'], $photoPath, $id
             ];
         } else {
-            // Insert
             $sql = "INSERT INTO students (nis, nisn, name, gender, birth_place, birth_date,
                     father_name, mother_name, address, phone, status, photo)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -118,226 +111,140 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/../../includes/header.php';
 ?>
 
-<div class="page-header">
-    <h1><?= htmlspecialchars($pageTitle) ?></h1>
-    <a href="index.php" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Kembali
+<!-- Page Header -->
+<div class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-bold tracking-tight text-slate-900"><?= htmlspecialchars($pageTitle) ?></h1>
+    <a href="index.php" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+        <i class="fas fa-arrow-left text-xs"></i> Kembali
     </a>
 </div>
 
+<!-- Errors -->
 <?php if (!empty($errors)): ?>
-    <div class="alert alert-danger">
-        <i class="fas fa-exclamation-circle"></i>
-        <ul style="margin: 0; padding-left: 20px;">
+<div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <div class="flex items-start gap-2.5">
+        <i class="fas fa-exclamation-circle mt-0.5 shrink-0 text-red-500"></i>
+        <ul class="list-disc space-y-0.5 pl-4">
             <?php foreach ($errors as $error): ?>
                 <li><?= htmlspecialchars($error) ?></li>
             <?php endforeach; ?>
         </ul>
     </div>
+</div>
 <?php endif; ?>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="" enctype="multipart/form-data" class="form-grid">
-            <div class="form-section">
-                <h3 class="form-section-title">Informasi Pribadi</h3>
+<!-- Form -->
+<div class="rounded-xl border border-slate-200 bg-white">
+    <form method="POST" action="" enctype="multipart/form-data">
+        <div class="divide-y divide-slate-100">
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="nis" class="form-label form-label-required">NIS</label>
-                        <input type="text" id="nis" name="nis" class="form-control" required
-                               value="<?= htmlspecialchars($student['nis'] ?? '') ?>">
+            <!-- Section: Personal Info -->
+            <div class="px-6 py-5">
+                <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Informasi Pribadi</h2>
+                <div class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                    <div>
+                        <label for="nis" class="mb-1.5 block text-sm font-medium text-slate-700">NIS <span class="text-red-500">*</span></label>
+                        <input type="text" id="nis" name="nis" required value="<?= htmlspecialchars($student['nis'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                     </div>
-
-                    <div class="form-group">
-                        <label for="nisn">NISN</label>
-                        <input type="text" id="nisn" name="nisn" class="form-control"
-                               value="<?= htmlspecialchars($student['nisn'] ?? '') ?>">
+                    <div>
+                        <label for="nisn" class="mb-1.5 block text-sm font-medium text-slate-700">NISN</label>
+                        <input type="text" id="nisn" name="nisn" value="<?= htmlspecialchars($student['nisn'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="name" class="form-label form-label-required">Nama Lengkap</label>
-                    <input type="text" id="name" name="name" class="form-control" required
-                           value="<?= htmlspecialchars($student['name'] ?? '') ?>">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="gender" class="form-label form-label-required">Jenis Kelamin</label>
-                        <select id="gender" name="gender" class="form-control" required>
+                    <div class="md:col-span-2">
+                        <label for="name" class="mb-1.5 block text-sm font-medium text-slate-700">Nama Lengkap <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" name="name" required value="<?= htmlspecialchars($student['name'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+                    </div>
+                    <div>
+                        <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700">Jenis Kelamin <span class="text-red-500">*</span></label>
+                        <select id="gender" name="gender" required
+                                class="w-full appearance-none rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                             <option value="">-- Pilih --</option>
-                            <option value="L" <?= (isset($student['gender']) && $student['gender'] === 'L') ? 'selected' : '' ?>>
-                                Laki-laki
-                            </option>
-                            <option value="P" <?= (isset($student['gender']) && $student['gender'] === 'P') ? 'selected' : '' ?>>
-                                Perempuan
-                            </option>
+                            <option value="L" <?= (isset($student['gender']) && $student['gender'] === 'L') ? 'selected' : '' ?>>Laki-laki</option>
+                            <option value="P" <?= (isset($student['gender']) && $student['gender'] === 'P') ? 'selected' : '' ?>>Perempuan</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="birth_place">Tempat Lahir</label>
-                        <input type="text" id="birth_place" name="birth_place" class="form-control"
-                               value="<?= htmlspecialchars($student['birth_place'] ?? '') ?>">
+                    <div>
+                        <label for="birth_place" class="mb-1.5 block text-sm font-medium text-slate-700">Tempat Lahir</label>
+                        <input type="text" id="birth_place" name="birth_place" value="<?= htmlspecialchars($student['birth_place'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="birth_date">Tanggal Lahir</label>
-                    <input type="date" id="birth_date" name="birth_date" class="form-control"
-                           value="<?= htmlspecialchars($student['birth_date'] ?? '') ?>">
+                    <div>
+                        <label for="birth_date" class="mb-1.5 block text-sm font-medium text-slate-700">Tanggal Lahir</label>
+                        <input type="date" id="birth_date" name="birth_date" value="<?= htmlspecialchars($student['birth_date'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+                    </div>
                 </div>
             </div>
 
-            <div class="form-section">
-                <h3 class="form-section-title">Informasi Orang Tua</h3>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="father_name">Nama Ayah</label>
-                        <input type="text" id="father_name" name="father_name" class="form-control"
-                               value="<?= htmlspecialchars($student['father_name'] ?? '') ?>">
+            <!-- Section: Parents -->
+            <div class="px-6 py-5">
+                <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Informasi Orang Tua</h2>
+                <div class="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                    <div>
+                        <label for="father_name" class="mb-1.5 block text-sm font-medium text-slate-700">Nama Ayah</label>
+                        <input type="text" id="father_name" name="father_name" value="<?= htmlspecialchars($student['father_name'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                     </div>
-
-                    <div class="form-group">
-                        <label for="mother_name">Nama Ibu</label>
-                        <input type="text" id="mother_name" name="mother_name" class="form-control"
-                               value="<?= htmlspecialchars($student['mother_name'] ?? '') ?>">
+                    <div>
+                        <label for="mother_name" class="mb-1.5 block text-sm font-medium text-slate-700">Nama Ibu</label>
+                        <input type="text" id="mother_name" name="mother_name" value="<?= htmlspecialchars($student['mother_name'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="address">Alamat</label>
-                    <textarea id="address" name="address" class="form-control" rows="3"><?= htmlspecialchars($student['address'] ?? '') ?></textarea>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="phone">No. Telepon</label>
-                        <input type="text" id="phone" name="phone" class="form-control"
-                               value="<?= htmlspecialchars($student['phone'] ?? '') ?>">
+                    <div class="md:col-span-2">
+                        <label for="address" class="mb-1.5 block text-sm font-medium text-slate-700">Alamat</label>
+                        <textarea id="address" name="address" rows="3"
+                                  class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100"><?= htmlspecialchars($student['address'] ?? '') ?></textarea>
                     </div>
-
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" class="form-control">
-                            <option value="Aktif" <?= (isset($student['status']) && $student['status'] === 'Aktif') ? 'selected' : '' ?>>
-                                Aktif
-                            </option>
-                            <option value="Tidak Aktif" <?= (isset($student['status']) && $student['status'] === 'Tidak Aktif') ? 'selected' : '' ?>>
-                                Tidak Aktif
-                            </option>
-                            <option value="Lulus" <?= (isset($student['status']) && $student['status'] === 'Lulus') ? 'selected' : '' ?>>
-                                Lulus
-                            </option>
-                            <option value="Keluar" <?= (isset($student['status']) && $student['status'] === 'Keluar') ? 'selected' : '' ?>>
-                                Keluar
-                            </option>
+                    <div>
+                        <label for="phone" class="mb-1.5 block text-sm font-medium text-slate-700">No. Telepon</label>
+                        <input type="text" id="phone" name="phone" value="<?= htmlspecialchars($student['phone'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+                    </div>
+                    <div>
+                        <label for="status" class="mb-1.5 block text-sm font-medium text-slate-700">Status</label>
+                        <select id="status" name="status"
+                                class="w-full appearance-none rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100">
+                            <option value="Aktif" <?= (isset($student['status']) && $student['status'] === 'Aktif') ? 'selected' : '' ?>>Aktif</option>
+                            <option value="Tidak Aktif" <?= (isset($student['status']) && $student['status'] === 'Tidak Aktif') ? 'selected' : '' ?>>Tidak Aktif</option>
+                            <option value="Lulus" <?= (isset($student['status']) && $student['status'] === 'Lulus') ? 'selected' : '' ?>>Lulus</option>
+                            <option value="Keluar" <?= (isset($student['status']) && $student['status'] === 'Keluar') ? 'selected' : '' ?>>Keluar</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div class="form-section">
-                <h3 class="form-section-title">Foto</h3>
-
-                <div class="form-group">
-                    <label for="photo">Upload Foto</label>
-                    <input type="file" id="photo" name="photo" class="form-control" accept="image/jpeg,image/png,image/jpg">
-                    <small class="form-text">Format: JPG, PNG. Maksimal 2MB.</small>
-
+            <!-- Section: Photo -->
+            <div class="px-6 py-5">
+                <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">Foto</h2>
+                <div>
+                    <label for="photo" class="mb-1.5 block text-sm font-medium text-slate-700">Upload Foto</label>
+                    <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/jpg"
+                           class="w-full rounded-lg border border-slate-300 px-3.5 py-2 text-sm text-slate-800 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1 file:text-xs file:font-medium file:text-primary-700">
+                    <p class="mt-1.5 text-xs text-slate-500">Format: JPG, PNG. Maksimal 2MB.</p>
                     <?php if (!empty($student['photo'])): ?>
-                        <div class="photo-preview">
-                            <img src="<?= BASE_URL . htmlspecialchars($student['photo']) ?>" alt="Foto Siswa">
-                            <p class="photo-label">Foto saat ini</p>
-                        </div>
+                    <div class="mt-4">
+                        <img src="<?= BASE_URL . htmlspecialchars($student['photo']) ?>" alt="Foto Siswa"
+                             class="h-36 w-28 rounded-lg border border-slate-200 object-cover">
+                        <p class="mt-1.5 text-xs text-slate-500">Foto saat ini</p>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
+        </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Simpan
-                </button>
-                <a href="index.php" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Batal
-                </a>
-            </div>
-        </form>
-    </div>
+        <!-- Actions -->
+        <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4 rounded-b-xl">
+            <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700">
+                <i class="fas fa-save text-xs"></i> Simpan
+            </button>
+            <a href="index.php" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+                Batal
+            </a>
+        </div>
+    </form>
 </div>
-
-<style>
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-
-.page-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--dark-color);
-}
-
-.form-grid {
-    display: grid;
-    gap: 30px;
-}
-
-.form-section {
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 20px;
-}
-
-.form-section-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--primary-color);
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-.photo-preview {
-    margin-top: 15px;
-    text-align: center;
-}
-
-.photo-preview img {
-    width: 150px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: var(--radius-md);
-    border: 2px solid var(--border-color);
-}
-
-.photo-label {
-    margin-top: 8px;
-    font-size: 13px;
-    color: var(--gray-color);
-}
-
-.form-actions {
-    display: flex;
-    gap: 10px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-}
-</style>
 
 <?php include __DIR__ . '/../../includes/footer.php'; ?>

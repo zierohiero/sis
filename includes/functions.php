@@ -220,29 +220,48 @@ function paginate($total, $perPage = 10, $currentPage = 1)
 
 function buildPagination($pagination, $urlPattern = '?page=%d')
 {
-    $html = '<nav aria-label="Page navigation"><ul class="pagination">';
+    if ($pagination['total_pages'] <= 1) return '';
 
+    $base = 'inline-flex items-center justify-center min-w-[36px] h-9 px-3 rounded-lg text-[13px] font-medium transition-colors';
+    $normal = $base . ' border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300';
+    $active = $base . ' bg-primary-600 text-white border border-primary-600';
+    $disabled = $base . ' border border-slate-200 text-slate-400 cursor-not-allowed bg-slate-50';
+
+    $html = '<nav aria-label="Navigasi halaman"><ul class="flex list-none gap-1">';
+
+    // Previous
     if ($pagination['current_page'] > 1) {
-        $html .= sprintf('<li class="page-item"><a class="page-link" href="%s">Previous</a></li>', sprintf($urlPattern, $pagination['current_page'] - 1));
+        $html .= sprintf('<li><a class="%s" href="%s"><i class="fas fa-chevron-left text-[10px]"></i></a></li>', $normal, sprintf($urlPattern, $pagination['current_page'] - 1));
     } else {
-        $html .= '<li class="page-item disabled"><span class="page-link">Previous</span></li>';
+        $html .= sprintf('<li><span class="%s"><i class="fas fa-chevron-left text-[10px]"></i></span></li>', $disabled);
     }
 
     $start = max(1, $pagination['current_page'] - 2);
     $end = min($pagination['total_pages'], $pagination['current_page'] + 2);
 
+    if ($start > 1) {
+        $html .= sprintf('<li><a class="%s" href="%s">1</a></li>', $normal, sprintf($urlPattern, 1));
+        if ($start > 2) $html .= '<li><span class="px-1 text-slate-400">...</span></li>';
+    }
+
     for ($i = $start; $i <= $end; $i++) {
         if ($i == $pagination['current_page']) {
-            $html .= sprintf('<li class="page-item active"><span class="page-link">%s</span></li>', $i);
+            $html .= sprintf('<li><span class="%s">%s</span></li>', $active, $i);
         } else {
-            $html .= sprintf('<li class="page-item"><a class="page-link" href="%s">%s</a></li>', sprintf($urlPattern, $i), $i);
+            $html .= sprintf('<li><a class="%s" href="%s">%s</a></li>', $normal, sprintf($urlPattern, $i), $i);
         }
     }
 
+    if ($end < $pagination['total_pages']) {
+        if ($end < $pagination['total_pages'] - 1) $html .= '<li><span class="px-1 text-slate-400">...</span></li>';
+        $html .= sprintf('<li><a class="%s" href="%s">%s</a></li>', $normal, sprintf($urlPattern, $pagination['total_pages']), $pagination['total_pages']);
+    }
+
+    // Next
     if ($pagination['current_page'] < $pagination['total_pages']) {
-        $html .= sprintf('<li class="page-item"><a class="page-link" href="%s">Next</a></li>', sprintf($urlPattern, $pagination['current_page'] + 1));
+        $html .= sprintf('<li><a class="%s" href="%s"><i class="fas fa-chevron-right text-[10px]"></i></a></li>', $normal, sprintf($urlPattern, $pagination['current_page'] + 1));
     } else {
-        $html .= '<li class="page-item disabled"><span class="page-link">Next</span></li>';
+        $html .= sprintf('<li><span class="%s"><i class="fas fa-chevron-right text-[10px]"></i></span></li>', $disabled);
     }
 
     $html .= '</ul></nav>';
@@ -327,45 +346,68 @@ function hasActiveAcademicYear()
 
 function getRoleMenuItems($role)
 {
+    // Grouped menu structure: each group has a label and items array
     $menus = array(
         'Administrator' => array(
-            array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
-            array('icon' => 'fas fa-calendar-alt', 'text' => 'Tahun Pelajaran', 'url' => 'modules/academic_years/index.php'),
-            array('icon' => 'fas fa-school', 'text' => 'Profil Sekolah', 'url' => 'admin/school_profile.php'),
-            array('icon' => 'fas fa-users-cog', 'text' => 'Pengguna', 'url' => 'modules/users/index.php'),
-            array('icon' => 'fas fa-chalkboard-teacher', 'text' => 'Guru', 'url' => 'modules/teachers/index.php'),
-            array('icon' => 'fas fa-user-graduate', 'text' => 'Siswa', 'url' => 'modules/students/index.php'),
-            array('icon' => 'fas fa-door-open', 'text' => 'Kelas', 'url' => 'modules/classes/index.php'),
-            array('icon' => 'fas fa-book', 'text' => 'Mata Pelajaran', 'url' => 'modules/subjects/index.php'),
-            array('icon' => 'fas fa-user-tie', 'text' => 'Wali Kelas', 'url' => 'admin/homeroom_teachers.php'),
-            array('icon' => 'fas fa-user-plus', 'text' => 'Pengelompokan Siswa', 'url' => 'admin/student_enrollments.php'),
-            array('icon' => 'fas fa-chalkboard', 'text' => 'Pengampu Mapel', 'url' => 'admin/subject_allocations.php'),
-            array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
-            array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
-            array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
-            array('icon' => 'fas fa-futbol', 'text' => 'Ekstrakurikuler', 'url' => 'modules/extracurricular/index.php'),
-            array('icon' => 'fas fa-clipboard-list', 'text' => 'Presensi', 'url' => 'admin/attendances.php'),
-            array('icon' => 'fas fa-print', 'text' => 'Cetak Rapor', 'url' => 'modules/reports/index.php'),
+            array('label' => '', 'items' => array(
+                array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
+            )),
+            array('label' => 'Master Data', 'items' => array(
+                array('icon' => 'fas fa-school', 'text' => 'Profil Sekolah', 'url' => 'admin/school_profile.php'),
+                array('icon' => 'fas fa-calendar-alt', 'text' => 'Tahun Pelajaran', 'url' => 'modules/academic_years/index.php'),
+                array('icon' => 'fas fa-door-open', 'text' => 'Kelas', 'url' => 'modules/classes/index.php'),
+                array('icon' => 'fas fa-book', 'text' => 'Mata Pelajaran', 'url' => 'modules/subjects/index.php'),
+            )),
+            array('label' => 'Pengguna', 'items' => array(
+                array('icon' => 'fas fa-users-cog', 'text' => 'Pengguna', 'url' => 'modules/users/index.php'),
+                array('icon' => 'fas fa-chalkboard-teacher', 'text' => 'Guru', 'url' => 'modules/teachers/index.php'),
+                array('icon' => 'fas fa-user-graduate', 'text' => 'Siswa', 'url' => 'modules/students/index.php'),
+            )),
+            array('label' => 'Akademik', 'items' => array(
+                array('icon' => 'fas fa-user-tie', 'text' => 'Wali Kelas', 'url' => 'admin/homeroom_teachers.php'),
+                array('icon' => 'fas fa-user-plus', 'text' => 'Pengelompokan Siswa', 'url' => 'admin/student_enrollments.php'),
+                array('icon' => 'fas fa-chalkboard', 'text' => 'Pengampu Mapel', 'url' => 'admin/subject_allocations.php'),
+                array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
+                array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
+                array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            )),
+            array('label' => 'Lainnya', 'items' => array(
+                array('icon' => 'fas fa-futbol', 'text' => 'Ekstrakurikuler', 'url' => 'modules/extracurricular/index.php'),
+                array('icon' => 'fas fa-clipboard-list', 'text' => 'Presensi', 'url' => 'admin/attendances.php'),
+                array('icon' => 'fas fa-print', 'text' => 'Cetak Rapor', 'url' => 'modules/reports/index.php'),
+            )),
         ),
         'Wali Kelas' => array(
-            array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
-            array('icon' => 'fas fa-user-graduate', 'text' => 'Siswa', 'url' => 'modules/students/index.php'),
-            array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
-            array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
-            array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
-            array('icon' => 'fas fa-futbol', 'text' => 'Ekstrakurikuler', 'url' => 'modules/extracurricular/index.php'),
-            array('icon' => 'fas fa-clipboard-list', 'text' => 'Presensi', 'url' => 'admin/attendances.php'),
-            array('icon' => 'fas fa-print', 'text' => 'Cetak Rapor', 'url' => 'modules/reports/index.php'),
+            array('label' => '', 'items' => array(
+                array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
+                array('icon' => 'fas fa-user-graduate', 'text' => 'Siswa', 'url' => 'modules/students/index.php'),
+            )),
+            array('label' => 'Akademik', 'items' => array(
+                array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
+                array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
+                array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            )),
+            array('label' => 'Lainnya', 'items' => array(
+                array('icon' => 'fas fa-futbol', 'text' => 'Ekstrakurikuler', 'url' => 'modules/extracurricular/index.php'),
+                array('icon' => 'fas fa-clipboard-list', 'text' => 'Presensi', 'url' => 'admin/attendances.php'),
+                array('icon' => 'fas fa-print', 'text' => 'Cetak Rapor', 'url' => 'modules/reports/index.php'),
+            )),
         ),
         'Guru' => array(
-            array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
-            array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
-            array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
-            array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            array('label' => '', 'items' => array(
+                array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
+            )),
+            array('label' => 'Akademik', 'items' => array(
+                array('icon' => 'fas fa-bullseye', 'text' => 'Kompetensi', 'url' => 'admin/competencies.php'),
+                array('icon' => 'fas fa-star', 'text' => 'Nilai Formatif', 'url' => 'modules/grades/formative.php'),
+                array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            )),
         ),
         'Ustaz' => array(
-            array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
-            array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            array('label' => '', 'items' => array(
+                array('icon' => 'fas fa-tachometer-alt', 'text' => 'Dashboard', 'url' => 'modules/dashboard/index.php'),
+                array('icon' => 'fas fa-clipboard-check', 'text' => 'Nilai Sumatif', 'url' => 'modules/grades/summative.php'),
+            )),
         ),
     );
 
