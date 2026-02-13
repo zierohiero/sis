@@ -71,14 +71,24 @@ $academicYear = getActiveAcademicYear();
             </div>
         </aside>
 
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
         <div class="main-content">
             <header class="topbar">
-                <button class="sidebar-toggle" onclick="toggleSidebar()">
-                    <i class="fas fa-bars"></i>
-                </button>
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
 
-                <div class="topbar-title">
-                    <h2><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Dashboard'; ?></h2>
+                    <div class="topbar-title">
+                        <h2><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Dashboard'; ?></h2>
+                    </div>
+
+                    <div class="topbar-search">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="globalSearch" placeholder="Cari menu, siswa, guru..." autocomplete="off" data-table-search="dataTable">
+                        <span class="search-shortcut">/</span>
+                    </div>
                 </div>
 
                 <div class="topbar-user">

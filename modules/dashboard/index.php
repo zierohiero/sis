@@ -268,52 +268,54 @@ include __DIR__ . '/../../includes/header.php';
 
 <style>
 .page-header {
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .page-greeting h1 {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
-    color: var(--dark-color);
-    margin-bottom: 8px;
+    color: var(--slate-900);
+    margin-bottom: 4px;
+    letter-spacing: -0.025em;
 }
 
 .text-muted {
-    color: var(--gray-color);
-    font-size: 15px;
+    color: var(--slate-500);
+    font-size: 14px;
 }
 
 .progress-container {
-    padding: 20px 0;
+    padding: 16px 0;
 }
 
 .progress-bar {
-    height: 32px;
-    background: var(--light-gray);
-    border-radius: 20px;
+    height: 10px;
+    background: var(--slate-100);
+    border-radius: 100px;
     overflow: hidden;
     margin-bottom: 10px;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: width 0.5s ease;
+    background: var(--primary-color);
+    border-radius: 100px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
 }
 
 .progress-text {
-    color: white;
+    position: absolute;
+    right: 0;
+    top: -24px;
+    color: var(--slate-700);
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .progress-label {
-    color: var(--gray-color);
-    font-size: 14px;
-    text-align: center;
+    color: var(--slate-500);
+    font-size: 13px;
 }
 </style>
 
