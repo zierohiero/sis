@@ -1,0 +1,116 @@
+<?php
+/**
+ * Header Template
+ * Sistem Informasi Sekolah
+ */
+
+if (!defined('BASE_URL')) {
+    require_once __DIR__ . '/../config/database.php';
+}
+
+$currentUser = array(
+    'id' => isset($_SESSION['user_id']) ? $_SESSION['user_id'] : NULL,
+    'name' => isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Guest',
+    'role' => isset($_SESSION['user_role']) ? $_SESSION['user_role'] : 'Guest',
+    'username' => isset($_SESSION['username']) ? $_SESSION['username'] : ''
+);
+
+$school = getSchoolProfile();
+$academicYear = getActiveAcademicYear();
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' - ' : ''; ?><?php echo $school ? htmlspecialchars($school['name']) : 'Sistem Informasi Sekolah'; ?></title>
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <?php if (isset($extra_css)) echo $extra_css; ?>
+</head>
+<body>
+    <?php if (isLoggedIn()): ?>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <?php if ($school && !empty($school['logo'])): ?>
+                    <img src="<?php echo BASE_URL . htmlspecialchars($school['logo']); ?>" class="sidebar-logo">
+                <?php else: ?>
+                    <div class="sidebar-logo-placeholder"><i class="fas fa-school"></i></div>
+                <?php endif; ?>
+                <div class="sidebar-title">
+                    <h3 class="sidebar-name"><?php echo $school ? htmlspecialchars($school['name']) : 'SIS'; ?></h3>
+                    <?php if ($academicYear): ?>
+                        <span class="sidebar-period"><?php echo htmlspecialchars($academicYear['period']) . ' - ' . htmlspecialchars($academicYear['semester']); ?></span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul class="nav-list">
+                    <?php
+                    $menuItems = getRoleMenuItems($currentUser['role']);
+                    foreach ($menuItems as $item):
+                        $isActive = (isset($currentPage) && basename($_SERVER['PHP_SELF']) === basename($item['url']));
+                    ?>
+                    <li class="nav-item">
+                        <a href="<?php echo BASE_URL . $item['url']; ?>" class="nav-link <?php echo $isActive ? 'active' : ''; ?>">
+                            <i class="<?php echo $item['icon']; ?>"></i>
+                            <span><?php echo htmlspecialchars($item['text']); ?></span>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="<?php echo BASE_URL; ?>modules/auth/logout.php" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <header class="topbar">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <div class="topbar-title">
+                    <h2><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Dashboard'; ?></h2>
+                </div>
+
+                <div class="topbar-user">
+                    <div class="user-dropdown" id="userDropdown">
+                        <button class="user-toggle" onclick="toggleUserDropdown()">
+                            <div class="user-avatar"><i class="fas fa-user"></i></div>
+                            <div class="user-info">
+                                <span class="user-name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
+                                <span class="user-role"><?php echo htmlspecialchars($currentUser['role']); ?></span>
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdownMenu">
+                            <div class="dropdown-header">
+                                <span class="dropdown-name"><?php echo htmlspecialchars($currentUser['name']); ?></span>
+                                <span class="dropdown-role"><?php echo htmlspecialchars($currentUser['role']); ?></span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="<?php echo BASE_URL; ?>modules/auth/logout.php" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="content">
+                <?php if (isset($_SESSION['flash_message'])): ?>
+                    <?php $flash = getFlashMessage(); ?>
+                    <div class="alert alert-<?php echo $flash['type']; ?>">
+                        <i class="fas fa-<?php echo $flash['type'] === 'success' ? 'check-circle' : 'exclamation-circle'; ?>"></i>
+                        <?php echo htmlspecialchars($flash['message']); ?>
+                    </div>
+                <?php endif; ?>
+    <?php endif; ?>
